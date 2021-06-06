@@ -24,7 +24,8 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include<mutex>
+#include <mutex>
+#include <iostream>
 
 namespace ORB_SLAM2
 {
@@ -125,6 +126,21 @@ cv::Mat FrameDrawer::DrawFrame()
     return imWithInfo;
 }
 
+// Draw mask image. Added 2021-06-04 18:11
+cv::Mat FrameDrawer::DrawMask()
+{
+    cv::Mat im;
+
+    {
+        unique_lock<mutex> lock(mMutex);
+        mImMask.copyTo(im);
+    }
+
+    im.convertTo(im, CV_8UC1, 255);
+
+    return im;
+}
+
 
 void FrameDrawer::DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText)
 {
@@ -168,6 +184,7 @@ void FrameDrawer::Update(Tracking *pTracker)
 {
     unique_lock<mutex> lock(mMutex);
     pTracker->mImGray.copyTo(mIm);
+    pTracker->mImMask.copyTo(mImMask);
     mvCurrentKeys=pTracker->mCurrentFrame.mvKeys;
     N = mvCurrentKeys.size();
     mvbVO = vector<bool>(N,false);

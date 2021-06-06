@@ -77,6 +77,7 @@ void Viewer::Run()
     Twc.SetIdentity();
 
     cv::namedWindow("DynaSLAM: Current Frame");
+    cv::namedWindow("DynaSLAM: R-CNN Segmentation");
 
     bool bFollow = true;
     bool bLocalizationMode = false;
@@ -124,7 +125,13 @@ void Viewer::Run()
         pangolin::FinishFrame();
 
         cv::Mat im = mpFrameDrawer->DrawFrame();
+        // Added 2021-06-04 20:25 drawing mask
+        cv::Mat imMask = mpFrameDrawer->DrawMask();
+
         cv::imshow("DynaSLAM: Current Frame",im);
+        cv::waitKey(mT);
+
+        cv::imshow("DynaSLAM: R-CNN Segmentation",imMask);
         cv::waitKey(mT);
 
         if(menuReset)

@@ -30,17 +30,30 @@ void tocsv(){U_SEGSt(t2sv);}
 SegmentDynObject::SegmentDynObject(){
     std::cout << "Importing Mask R-CNN Settings..." << std::endl;
     ImportSettings();
+    std::cout << "Imported" << std::endl;
     std::string x;
     setenv("PYTHONPATH", this->py_path.c_str(), 1);
     x = getenv("PYTHONPATH");
+    std::cout << "Environment: " << x << std::endl;
     Py_Initialize();
+    std::cout << "Python initialized" << std::endl;
     this->cvt = new NDArrayConverter();
     this->py_module = PyImport_ImportModule(this->module_name.c_str());
-    assert(this->py_module != NULL);
+    std::cout << py_module << std::endl;
+    if(py_module == 0)
+    {
+        std::cout << "ERROR importing module" << std::endl;
+        PyErr_Print();
+        exit(-1);
+    }
+    assert(py_module != 0);
+    std::cout << "Module imported" << std::endl;
     this->py_class = PyObject_GetAttrString(this->py_module, this->class_name.c_str());
-    assert(this->py_class != NULL);
+    assert(this->py_class != 0);
+    std::cout << "Class imported" << std::endl;
     this->net = PyInstance_New(this->py_class, NULL, NULL);
-    assert(this->net != NULL);
+    assert(this->net != 0);
+    std::cout << "Instance Imported" << std::endl;
     std::cout << "Creating net instance..." << std::endl;
     cv::Mat image  = cv::Mat::zeros(480,640,CV_8UC3); //Be careful with size!!
     std::cout << "Loading net parameters..." << std::endl;
@@ -55,12 +68,30 @@ SegmentDynObject::~SegmentDynObject(){
 }
 
 cv::Mat SegmentDynObject::GetSegmentation(cv::Mat &image,std::string dir, std::string name){
+    // std::cout << "reading image: " << dir + "/" + name << std::endl;
     cv::Mat seg = cv::imread(dir+"/"+name,CV_LOAD_IMAGE_UNCHANGED);
+    // std::cout << "seg mat: " << seg.empty() << std::endl;
     if(seg.empty()){
         PyObject* py_image = cvt->toNDArray(image.clone());
+        if(py_image == 0)
+        {
+            std::cout << "ERROR converting toNDArray" << std::endl;
+            PyErr_Print();
+            exit(-1);
+        }
+        // std::cout << "toNDArray done" << std::endl;
         assert(py_image != NULL);
         PyObject* py_mask_image = PyObject_CallMethod(this->net, const_cast<char*>(this->get_dyn_seg.c_str()),"(O)",py_image);
+        // std::cout << "calling Method checking" << std::endl;
+        if(py_mask_image == 0)
+        {
+            std::cout << "ERROR calling Method: " << get_dyn_seg << std::endl;
+            PyErr_Print();
+            exit(-1);
+        }
+        // std::cout << "calling Method done" << std::endl;
         seg = cvt->toMat(py_mask_image).clone();
+        // std::cout << "seg mat: " << !seg.empty() << std::endl;
         seg.cv::Mat::convertTo(seg,CV_8U);//0 background y 1 foreground
         if(dir.compare("no_save")!=0){
             DIR* _dir = opendir(dir.c_str());
@@ -88,10 +119,10 @@ void SegmentDynObject::ImportSettings(){
     fs["class_name"] >> this->class_name;
     fs["get_dyn_seg"] >> this->get_dyn_seg;
 
-    // std::cout << "    py_path: "<< this->py_path << std::endl;
-    // std::cout << "    module_name: "<< this->module_name << std::endl;
-    // std::cout << "    class_name: "<< this->class_name << std::endl;
-    // std::cout << "    get_dyn_seg: "<< this->get_dyn_seg << std::endl;
+    std::cout << "    py_path: "<< this->py_path << std::endl;
+    std::cout << "    module_name: "<< this->module_name << std::endl;
+    std::cout << "    class_name: "<< this->class_name << std::endl;
+    std::cout << "    get_dyn_seg: "<< this->get_dyn_seg << std::endl;
 }
 
 
