@@ -20,6 +20,7 @@ namespace DynaSLAM
 SegmentDynObject::SegmentDynObject(){
 	std::cout << "Importing Mask R-CNN Settings..." << std::endl;
 	ImportSettings();
+    std::cout << "Importing settings succeeded" << std::endl;
 	std::string x;   
 	setenv("PYTHONPATH", this->py_path.c_str(), 1);
 	x = getenv("PYTHONPATH");
